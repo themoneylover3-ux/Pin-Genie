@@ -1,0 +1,2006 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PIN Genie — Daily Pin Automation & Brand Studio</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts for UI & Dynamic Pin Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Cinzel:wght@600;700&family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700&family=Lato:wght@400;700&family=Montserrat:wght@600;700;800&family=Open+Sans:wght@400;600&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Playfair Display', 'serif'],
+          },
+          colors: {
+            slateDark: '#0b1220',
+            panelDark: '#121c2e',
+            cardDark: '#19253b',
+            borderDark: '#263652',
+            tealBrand: '#2dd4bf',
+            tealDeep: '#14b8a6',
+            goldBrand: '#d4af37',
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* Custom subtle scrollbars for executive studio feel */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b1220;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #263652;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2dd4bf;
+    }
+    input[type="color"] {
+      -webkit-appearance: none;
+      border: none;
+      padding: 0;
+    }
+    input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+    input[type="color"]::-webkit-color-swatch {
+      border: none;
+      border-radius: 6px;
+    }
+    .pin-card-ring {
+      box-shadow: 0 0 0 2px #2dd4bf, 0 12px 28px -6px rgba(45, 212, 191, 0.25);
+    }
+  </style>
+</head>
+<body class="bg-slateDark text-slate-100 font-sans antialiased min-h-screen flex flex-col selection:bg-tealBrand selection:text-slateDark">
+
+  <!-- Toast Notification Container (Replaces alert/confirm) -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Top Executive Header Bar -->
+  <header class="bg-panelDark border-b border-borderDark px-4 lg:px-6 py-3 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-30 shadow-lg">
+    <div class="flex items-center gap-3">
+      <!-- Brand Mark -->
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-tealBrand to-teal-600 flex items-center justify-center text-slateDark font-bold shadow-md shadow-tealBrand/20">
+        <i class="fa-brands fa-pinterest-p text-lg"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">PIN Genie</h1>
+          <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-tealBrand/15 text-tealBrand border border-tealBrand/30">Daily Pin Automation</span>
+        </div>
+        <p class="text-[11px] text-slate-400 hidden sm:block">Brand-Consistent Visual Pin Studio &amp; SEO Queue Engine</p>
+      </div>
+    </div>
+
+    <!-- Center/Right Controls -->
+    <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+      <!-- License Status Badge / Commercial Gate Trigger -->
+      <button id="licenseBtn" onclick="openLicenseModal()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-goldBrand border border-goldBrand/30 transition">
+        <i class="fa-solid fa-crown"></i>
+        <span id="licenseBadgeText">Studio Demo (3 Free Exports)</span>
+      </button>
+
+      <!-- Export Brand Kit JSON -->
+      <button onclick="exportBrandKit()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-cardDark hover:bg-slate-700 text-slate-200 border border-borderDark transition" title="Export Brand DNA & Presets">
+        <i class="fa-solid fa-file-export text-tealBrand"></i>
+        <span class="hidden md:inline">Export Brand Kit</span>
+      </button>
+
+      <!-- Reset Demo Data -->
+      <button onclick="requestResetConfirmation()" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-cardDark hover:bg-rose-950/60 text-slate-300 hover:text-rose-300 border border-borderDark transition" title="Reset Workspace to Default">
+        <i class="fa-solid fa-rotate-left"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Inline Confirmation Banner (Hidden by default, used instead of confirm()) -->
+  <div id="confirmBanner" class="hidden bg-rose-950/90 border-b border-rose-700/60 px-6 py-2.5 flex items-center justify-between text-xs text-rose-100">
+    <div class="flex items-center gap-2">
+      <i class="fa-solid fa-triangle-exclamation text-rose-400"></i>
+      <span id="confirmBannerText">Reset all brand profiles, uploaded photos, and scheduled queue back to factory demo?</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="confirmActionExecute()" class="px-3 py-1 rounded bg-rose-600 hover:bg-rose-500 font-semibold text-white transition">Yes, Reset</button>
+      <button onclick="closeConfirmBanner()" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 transition">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Main 3-Column Studio Workspace -->
+  <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 p-4 lg:p-5 max-w-[1680px] w-full mx-auto">
+
+    <!-- =================================================================== -->
+    <!-- COLUMN 1: BRAND STUDIO & CONTENT LIBRARY (3 cols on xl, 4 on lg)    -->
+    <!-- =================================================================== -->
+    <section class="lg:col-span-4 xl:col-span-3 bg-panelDark border border-borderDark rounded-2xl p-4 flex flex-col gap-4 shadow-xl h-fit">
+      <div class="flex items-center justify-between border-b border-borderDark pb-3">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-palette text-tealBrand"></i>
+          <h2 class="font-semibold text-sm tracking-wide uppercase text-slate-200">Brand Studio</h2>
+        </div>
+        <button onclick="createNewBrandProfile()" class="text-xs text-tealBrand hover:underline flex items-center gap-1 font-medium">
+          <i class="fa-solid fa-plus"></i> New Brand
+        </button>
+      </div>
+
+      <!-- Brand Profile Switcher & Editable Brand Name -->
+      <div class="space-y-2">
+        <label class="block text-xs font-medium text-slate-400">Active Brand Profile</label>
+        <select id="brandProfileSelect" onchange="switchBrandProfile(this.value)" class="w-full bg-cardDark border border-borderDark rounded-xl px-3 py-2 text-xs font-medium text-white focus:outline-none focus:border-tealBrand transition"></select>
+        <input id="brandNameInput" type="text" oninput="updateActiveBrand('name', this.value)" placeholder="Your Business / Shop Name" class="w-full bg-slateDark/80 border border-borderDark rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-tealBrand transition" />
+      </div>
+
+      <!-- Sales Persona Engine -->
+      <div class="space-y-2 bg-cardDark/60 border border-borderDark rounded-xl p-3">
+        <div class="flex items-center justify-between">
+          <label class="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+            <i class="fa-solid fa-bullhorn text-goldBrand"></i> Sales Persona
+          </label>
+          <span class="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-tealBrand/15 text-tealBrand font-semibold">Voice Lock</span>
+        </div>
+        <select id="personaSelect" onchange="updateActiveBrand('persona', this.value)" class="w-full bg-slateDark border border-borderDark rounded-lg px-2.5 py-2 text-xs font-medium text-white focus:outline-none focus:border-tealBrand">
+          <option value="Friendly & Encouraging">Friendly &amp; Encouraging</option>
+          <option value="Bold & Direct-Response">Bold &amp; Direct-Response</option>
+          <option value="Luxury Editorial">Luxury Editorial</option>
+          <option value="Cozy & Relatable">Cozy &amp; Relatable</option>
+          <option value="Urgent Deal Hunter">Urgent Deal Hunter</option>
+        </select>
+        <div>
+          <label class="block text-[11px] text-slate-400 mb-1">Brand Keywords &amp; Niche Focus</label>
+          <input id="brandKeywordsInput" type="text" oninput="updateActiveBrand('keywords', this.value)" placeholder="e.g. handmade ceramics, cozy home, gift ideas" class="w-full bg-slateDark border border-borderDark rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-tealBrand" />
+        </div>
+      </div>
+
+      <!-- Visual Style Guide (Interactive Hex Pickers) -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <label class="text-xs font-medium text-slate-400">Visual Style Guide (Live Sync)</label>
+          <span class="text-[10px] text-slate-500">Click swatch to edit</span>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <!-- Primary Color -->
+          <div class="bg-cardDark border border-borderDark rounded-xl p-2 flex flex-col items-center gap-1.5">
+            <input type="color" id="colorPrimary" oninput="updateBrandColor('primary', this.value)" class="w-full h-7 rounded cursor-pointer" />
+            <span id="hexPrimary" class="text-[11px] font-mono text-slate-300 uppercase">#D4AF37</span>
+            <span class="text-[9px] text-slate-500 uppercase">Primary</span>
+          </div>
+          <!-- Secondary Color -->
+          <div class="bg-cardDark border border-borderDark rounded-xl p-2 flex flex-col items-center gap-1.5">
+            <input type="color" id="colorSecondary" oninput="updateBrandColor('secondary', this.value)" class="w-full h-7 rounded cursor-pointer" />
+            <span id="hexSecondary" class="text-[11px] font-mono text-slate-300 uppercase">#2D4A3E</span>
+            <span class="text-[9px] text-slate-500 uppercase">Secondary</span>
+          </div>
+          <!-- Canvas / Light Accent Color -->
+          <div class="bg-cardDark border border-borderDark rounded-xl p-2 flex flex-col items-center gap-1.5">
+            <input type="color" id="colorCanvas" oninput="updateBrandColor('canvas', this.value)" class="w-full h-7 rounded cursor-pointer" />
+            <span id="hexCanvas" class="text-[11px] font-mono text-slate-300 uppercase">#F8F4EC</span>
+            <span class="text-[9px] text-slate-500 uppercase">Canvas</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Typography Pair & Aesthetic Style Preset -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2.5">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Typography Pairing</label>
+          <select id="fontPairSelect" onchange="updateActiveBrand('fontPair', this.value)" class="w-full bg-cardDark border border-borderDark rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-tealBrand">
+            <option value="Playfair Display|Lato">Playfair Display + Lato (Editorial)</option>
+            <option value="Montserrat|Open Sans">Montserrat + Open Sans (Modern Clean)</option>
+            <option value="Cinzel|Inter">Cinzel + Inter (Luxury Boutique)</option>
+            <option value="Abril Fatface|DM Sans">Abril Fatface + DM Sans (Bold Viral)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Aesthetic Template Style</label>
+          <select id="aestheticSelect" onchange="updateActiveBrand('aesthetic', this.value)" class="w-full bg-cardDark border border-borderDark rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-tealBrand">
+            <option value="Warm Editorial">Warm Editorial Frame</option>
+            <option value="Clean Minimalist">Clean Minimalist Card</option>
+            <option value="Bold Offer Card">Bold Conversion Banner</option>
+            <option value="Rustic Craft">Arch Window &amp; Craft Badge</option>
+            <option value="Modern Luxe">Modern Luxe Split</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Logo / Watermark Studio -->
+      <div class="bg-cardDark/60 border border-borderDark rounded-xl p-3 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium text-slate-300">Logo / Watermark Stamp</span>
+          <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs text-slate-300">
+            <input id="showWatermarkToggle" type="checkbox" checked onchange="updateActiveBrand('showWatermark', this.checked)" class="rounded accent-tealBrand w-3.5 h-3.5" />
+            <span>Show on Pin</span>
+          </label>
+        </div>
+        <div class="flex items-center gap-3">
+          <div id="logoPreviewBox" class="w-12 h-12 rounded-full bg-slateDark border border-borderDark flex items-center justify-center overflow-hidden shrink-0 text-xs font-serif font-bold text-goldBrand">
+            AP
+          </div>
+          <div class="flex-1 flex flex-col gap-1.5">
+            <label class="cursor-pointer inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slateDark hover:bg-slate-800 border border-borderDark text-[11px] font-medium text-slate-200 transition">
+              <i class="fa-solid fa-upload text-tealBrand"></i> Upload Logo PNG/JPG
+              <input type="file" accept="image/*" onchange="handleLogoUpload(event)" class="hidden" />
+            </label>
+            <button onclick="clearCustomLogo()" class="text-[10px] text-slate-400 hover:text-slate-200 text-left">Use auto-monogram badge</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Library (Built-in Studio Visuals + Drag & Drop Upload) -->
+      <div class="space-y-2 pt-1 border-t border-borderDark">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+            <i class="fa-solid fa-images text-tealBrand"></i> Content Library
+          </span>
+          <label class="cursor-pointer text-[11px] text-tealBrand hover:underline font-medium flex items-center gap-1">
+            <i class="fa-solid fa-plus"></i> Upload Photos
+            <input type="file" accept="image/*" multiple onchange="handleProductPhotoUpload(event)" class="hidden" />
+          </label>
+        </div>
+
+        <!-- Drag & Drop Zone -->
+        <div id="dropZone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="border border-dashed border-borderDark hover:border-tealBrand/70 rounded-xl p-2.5 text-center transition bg-slateDark/40">
+          <p class="text-[11px] text-slate-400">Drag &amp; drop product images here, or click thumbnails below to toggle active pool</p>
+        </div>
+
+        <!-- Thumbnail Grid -->
+        <div id="libraryGrid" class="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-1"></div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- COLUMN 2: DAILY PIN GENERATOR & CANVAS PREVIEW (5 cols xl, 8 lg)    -->
+    <!-- =================================================================== -->
+    <section class="lg:col-span-8 xl:col-span-6 bg-panelDark border border-borderDark rounded-2xl p-4 sm:p-5 flex flex-col gap-4 shadow-xl">
+      <!-- Top Bar: Today's Date, Batch Size & Primary Generate CTA -->
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-borderDark pb-3.5">
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="font-bold text-base text-white">Daily Pin Generator</h2>
+            <span id="todayDateLabel" class="text-xs text-slate-400 bg-cardDark px-2.5 py-0.5 rounded-full border border-borderDark"></span>
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5">Generates 1000×1500px vertical Pinterest assets locked to your brand DNA</p>
+        </div>
+
+        <div class="flex items-center gap-2.5">
+          <div class="flex items-center gap-1.5 bg-cardDark border border-borderDark rounded-xl px-2.5 py-1.5">
+            <span class="text-xs text-slate-400">Batch:</span>
+            <select id="batchSizeSelect" class="bg-transparent text-xs font-bold text-white focus:outline-none cursor-pointer">
+              <option value="3" class="bg-panelDark">3 Pins</option>
+              <option value="4" selected class="bg-panelDark">4 Pins</option>
+              <option value="6" class="bg-panelDark">6 Pins</option>
+            </select>
+          </div>
+
+          <button onclick="generateDailyPinBatch()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-tealBrand to-teal-500 hover:from-teal-300 hover:to-teal-400 text-slateDark font-bold text-xs sm:text-sm shadow-lg shadow-tealBrand/20 flex items-center gap-2 transition active:scale-[0.98]">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span>Generate Daily Batch</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Prompt Composer + Quick Hook Angle Chips -->
+      <div class="bg-cardDark/70 border border-borderDark rounded-xl p-3.5 space-y-2.5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <label for="promptComposer" class="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+            <i class="fa-solid fa-pen-nib text-tealBrand"></i> Campaign / Product Prompt Composer
+          </label>
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span class="text-[10px] text-slate-400 uppercase tracking-wider mr-1">Hook Angles:</span>
+            <button onclick="applyHookAngle('Gift Guide')" class="px-2 py-0.5 rounded-md text-[11px] bg-slateDark hover:bg-tealBrand/20 text-slate-300 hover:text-tealBrand border border-borderDark transition">Gift Guide</button>
+            <button onclick="applyHookAngle('Bestseller')" class="px-2 py-0.5 rounded-md text-[11px] bg-slateDark hover:bg-tealBrand/20 text-slate-300 hover:text-tealBrand border border-borderDark transition">Bestseller</button>
+            <button onclick="applyHookAngle('Problem/Solution')" class="px-2 py-0.5 rounded-md text-[11px] bg-slateDark hover:bg-tealBrand/20 text-slate-300 hover:text-tealBrand border border-borderDark transition">How-To / Tip</button>
+            <button onclick="applyHookAngle('Seasonal Drop')" class="px-2 py-0.5 rounded-md text-[11px] bg-slateDark hover:bg-tealBrand/20 text-slate-300 hover:text-tealBrand border border-borderDark transition">Seasonal Drop</button>
+          </div>
+        </div>
+
+        <textarea id="promptComposer" rows="2" class="w-full bg-slateDark border border-borderDark rounded-xl p-3 text-xs sm:text-sm text-slate-100 leading-relaxed focus:outline-none focus:border-tealBrand transition resize-none" placeholder="Describe today's product, offer, or content topic..."></textarea>
+
+        <!-- Visual Variation Slider & Batch Actions -->
+        <div class="flex flex-wrap items-center justify-between gap-4 pt-1">
+          <div class="flex items-center gap-3 flex-1 min-w-[220px]">
+            <span class="text-xs font-medium text-slate-300 whitespace-nowrap">Visual Variation:</span>
+            <input id="variationSlider" type="range" min="1" max="3" value="2" oninput="updateVariationLabel(this.value)" class="w-full accent-tealBrand cursor-pointer h-1.5 bg-slateDark rounded-lg" />
+            <span id="variationLabel" class="text-xs font-semibold text-tealBrand w-24 text-right">Moderate</span>
+          </div>
+
+          <button onclick="downloadAllBatchPNGs()" class="px-3 py-1.5 rounded-lg bg-slateDark hover:bg-slate-800 border border-borderDark text-xs font-medium text-slate-200 flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-download text-goldBrand"></i>
+            <span>Download All PNGs</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Inline Selected Pin Quick-Editor Bar -->
+      <div id="inlinePinEditor" class="bg-slateDark/90 border border-borderDark rounded-xl p-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+        <div class="flex items-center gap-2 shrink-0">
+          <span class="px-2 py-1 rounded bg-tealBrand/15 text-tealBrand text-xs font-bold" id="selectedPinBadge">Pin #1</span>
+          <span class="text-xs text-slate-400">Live Text Override:</span>
+        </div>
+        <input id="editPinHeadline" type="text" oninput="updateSelectedPinText('headline', this.value)" placeholder="Pin Headline..." class="flex-1 bg-cardDark border border-borderDark rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-tealBrand" />
+        <input id="editPinCta" type="text" oninput="updateSelectedPinText('cta', this.value)" placeholder="CTA Button..." class="sm:w-36 bg-cardDark border border-borderDark rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-tealBrand" />
+      </div>
+
+      <!-- Generated Pins Grid (2:3 Vertical Aspect Ratio Cards) -->
+      <div id="pinsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- COLUMN 3: SEO OPTIMIZATION & CONTENT QUEUE (3 cols xl, 12 lg)       -->
+    <!-- =================================================================== -->
+    <section class="lg:col-span-12 xl:col-span-3 bg-panelDark border border-borderDark rounded-2xl p-4 flex flex-col gap-4 shadow-xl h-fit">
+      <div class="flex items-center justify-between border-b border-borderDark pb-3">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-rocket text-tealBrand"></i>
+          <h2 class="font-semibold text-sm tracking-wide uppercase text-slate-200">Optimization &amp; Queue</h2>
+        </div>
+        <span class="text-[11px] font-medium text-emerald-400 flex items-center gap-1">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> SEO Ready
+        </span>
+      </div>
+
+      <!-- Pinterest Account & Board Selector -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-2.5">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Pinterest Account Handle</label>
+          <div class="flex items-center bg-cardDark border border-borderDark rounded-xl px-3 py-1.5">
+            <i class="fa-brands fa-pinterest text-rose-500 mr-2 text-sm"></i>
+            <input id="pinterestHandleInput" type="text" oninput="updateActiveBrand('handle', this.value)" class="bg-transparent w-full text-xs font-medium text-white focus:outline-none" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Target Board</label>
+          <input id="pinterestBoardInput" type="text" oninput="updateActiveBrand('board', this.value)" class="w-full bg-cardDark border border-borderDark rounded-xl px-3 py-1.5 text-xs font-medium text-white focus:outline-none focus:border-tealBrand" />
+        </div>
+      </div>
+
+      <!-- Auto-Generated SEO Pin Copy -->
+      <div class="space-y-3 bg-cardDark/60 border border-borderDark rounded-xl p-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-200">SEO Pin Metadata</span>
+          <button onclick="regenerateSeoForSelected()" class="text-[11px] text-tealBrand hover:underline flex items-center gap-1">
+            <i class="fa-solid fa-arrows-rotate"></i> Refresh Copy
+          </button>
+        </div>
+
+        <!-- Pin Title -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-[11px] text-slate-400">Pin Title (<span id="titleCharCount">0</span>/100)</label>
+            <button onclick="copyFieldText('seoTitleInput', 'Pin Title')" class="text-[11px] text-tealBrand hover:text-teal-300 flex items-center gap-1">
+              <i class="fa-regular fa-copy"></i> Copy
+            </button>
+          </div>
+          <input id="seoTitleInput" type="text" maxlength="100" oninput="syncSelectedPinSeo('title', this.value)" class="w-full bg-slateDark border border-borderDark rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-tealBrand" />
+        </div>
+
+        <!-- Pin Description + Hashtags -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-[11px] text-slate-400">SEO Description (<span id="descCharCount">0</span>/500)</label>
+            <button onclick="copyFieldText('seoDescInput', 'Pin Description')" class="text-[11px] text-tealBrand hover:text-teal-300 flex items-center gap-1">
+              <i class="fa-regular fa-copy"></i> Copy
+            </button>
+          </div>
+          <textarea id="seoDescInput" rows="4" maxlength="500" oninput="syncSelectedPinSeo('description', this.value)" class="w-full bg-slateDark border border-borderDark rounded-lg p-2.5 text-xs text-slate-200 leading-relaxed focus:outline-none focus:border-tealBrand resize-none"></textarea>
+        </div>
+
+        <!-- Destination URL + UTM Toggle -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-[11px] text-slate-400">Destination Link</label>
+            <label class="inline-flex items-center gap-1 text-[10px] text-slate-400 cursor-pointer">
+              <input id="utmToggle" type="checkbox" checked onchange="updateDestinationUrlPreview()" class="accent-tealBrand rounded" />
+              <span>Append Pinterest UTM</span>
+            </label>
+          </div>
+          <input id="destUrlInput" type="text" oninput="updateActiveBrand('url', this.value)" class="w-full bg-slateDark border border-borderDark rounded-lg px-2.5 py-1.5 text-xs text-tealBrand font-mono focus:outline-none focus:border-tealBrand" />
+        </div>
+      </div>
+
+      <!-- Mini Calendar & Post Time Scheduler -->
+      <div class="bg-cardDark/60 border border-borderDark rounded-xl p-3 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+            <i class="fa-regular fa-calendar-check text-goldBrand"></i> Schedule Selected Pin
+          </span>
+          <span id="calendarMonthLabel" class="text-[11px] font-medium text-slate-400"></span>
+        </div>
+
+        <!-- Interactive Mini Calendar Grid -->
+        <div class="bg-slateDark border border-borderDark rounded-xl p-2.5">
+          <div class="grid grid-cols-7 text-center text-[10px] font-semibold text-slate-500 mb-1.5">
+            <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+          </div>
+          <div id="miniCalendarGrid" class="grid grid-cols-7 gap-1 text-center text-xs"></div>
+        </div>
+
+        <!-- Optimal Post Time & Schedule Action -->
+        <div class="flex items-center gap-2">
+          <div class="flex-1">
+            <label class="block text-[10px] text-slate-400 mb-0.5">Optimal Slot</label>
+            <select id="postTimeSelect" class="w-full bg-slateDark border border-borderDark rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-tealBrand">
+              <option value="09:00 AM">09:00 AM (Morning Browse)</option>
+              <option value="12:30 PM">12:30 PM (Lunch Peak)</option>
+              <option value="05:15 PM">05:15 PM (Evening Commute)</option>
+              <option value="08:45 PM" selected>08:45 PM (Prime Save Window)</option>
+            </select>
+          </div>
+          <button onclick="scheduleSelectedPin()" class="mt-3.5 px-4 py-2 rounded-xl bg-tealBrand hover:bg-teal-300 text-slateDark font-bold text-xs shadow-md transition flex items-center gap-1.5 shrink-0">
+            <i class="fa-solid fa-calendar-plus"></i>
+            <span>Queue Pin</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Persistent Scheduled Pin Queue -->
+      <div class="space-y-2 pt-1 border-t border-borderDark">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-200">
+            Scheduled Queue (<span id="queueCount">0</span>)
+          </span>
+          <button onclick="exportQueueCSV()" class="text-[11px] text-goldBrand hover:underline flex items-center gap-1 font-medium">
+            <i class="fa-solid fa-file-csv"></i> Export CSV
+          </button>
+        </div>
+
+        <div id="scheduledQueueList" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Commercial SaaS License / Pro Unlock Modal (Ready to Sell) -->
+  <div id="licenseModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-panelDark border border-borderDark rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 relative">
+      <button onclick="closeLicenseModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl bg-amber-500/15 border border-goldBrand/40 flex items-center justify-center text-goldBrand text-xl">
+          <i class="fa-solid fa-crown"></i>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-white">PIN Genie Studio Pro License</h3>
+          <p class="text-xs text-slate-400">Commercial Creator &amp; Agency Edition</p>
+        </div>
+      </div>
+
+      <p class="text-xs text-slate-300 leading-relaxed">
+        Unlock unlimited 1000×1500px PNG batch downloads, multi-brand client profiles, and bulk CSV scheduling exports for Pinterest &amp; Tailwind.
+      </p>
+
+      <div class="bg-cardDark border border-borderDark rounded-xl p-3.5 space-y-2 text-xs">
+        <div class="flex items-center gap-2 text-slate-200"><i class="fa-solid fa-check text-tealBrand"></i> Unlimited High-Res 1000×1500 PNG Exports</div>
+        <div class="flex items-center gap-2 text-slate-200"><i class="fa-solid fa-check text-tealBrand"></i> Unlimited Custom Brand Profiles &amp; Logos</div>
+        <div class="flex items-center gap-2 text-slate-200"><i class="fa-solid fa-check text-tealBrand"></i> Commercial Agency Resell Rights</div>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-xs font-medium text-slate-300">Enter License Key (Demo Key: <code class="text-tealBrand bg-slateDark px-1.5 py-0.5 rounded">PINGENIE-PRO-2026</code>)</label>
+        <div class="flex gap-2">
+          <input id="licenseKeyInput" type="text" placeholder="PINGENIE-PRO-2026" class="flex-1 bg-slateDark border border-borderDark rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-tealBrand" />
+          <button onclick="activateLicenseKey()" class="px-4 py-2 rounded-xl bg-tealBrand hover:bg-teal-300 text-slateDark font-bold text-xs transition">Activate</button>
+        </div>
+      </div>
+
+      <div class="pt-2 border-t border-borderDark flex items-center justify-between text-[11px] text-slate-400">
+        <span>Seller Ready: Wire your Stripe / Gumroad URL here</span>
+        <button onclick="fillDemoLicenseKey()" class="text-goldBrand hover:underline">Auto-fill Demo Key</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden High-Res Offscreen Canvas for 1000x1500 PNG Rendering -->
+  <canvas id="exportCanvas" width="1000" height="1500" class="hidden"></canvas>
+
+  <script>
+    // =========================================================================
+    // 1. STATE MANAGEMENT & PERSISTENT STORAGE
+    // =========================================================================
+    const STORAGE_KEY = 'pingenie_studio_state_v1';
+
+    const DEFAULT_BRANDS = [
+      {
+        id: 'brand-pottery',
+        name: 'Artisan Pottery Co.',
+        persona: 'Friendly & Encouraging',
+        keywords: 'handmade ceramic mugs, cozy morning coffee, rustic kitchen gifts, stoneware',
+        colors: {
+          primary: '#D4AF37',
+          secondary: '#263B32',
+          canvas: '#F6F1E7'
+        },
+        fontPair: 'Playfair Display|Lato',
+        aesthetic: 'Warm Editorial',
+        showWatermark: true,
+        customLogoDataUrl: null,
+        handle: '@ArtisanPotteryCo',
+        board: 'Cozy Kitchen & Handmade Ceramic Gifts',
+        url: 'https://artisanpotteryco.example.com/mugs'
+      },
+      {
+        id: 'brand-skincare',
+        name: 'Lumière Botanicals',
+        persona: 'Luxury Editorial',
+        keywords: 'clean botanical serum, glowing skin ritual, minimalist skincare, organic beauty',
+        colors: {
+          primary: '#C59B6D',
+          secondary: '#1D2927',
+          canvas: '#FAF7F2'
+        },
+        fontPair: 'Cinzel|Inter',
+        aesthetic: 'Modern Luxe',
+        showWatermark: true,
+        customLogoDataUrl: null,
+        handle: '@LumiereBotanicals',
+        board: 'Minimalist Skincare & Clean Beauty Rituals',
+        url: 'https://lumierebotanicals.example.com/ritual'
+      },
+      {
+        id: 'brand-templates',
+        name: 'MetricFlow Studio',
+        persona: 'Bold & Direct-Response',
+        keywords: 'notion business templates, small business planner, productivity dashboard, digital download',
+        colors: {
+          primary: '#14B8A6',
+          secondary: '#0F172A',
+          canvas: '#F1F5F9'
+        },
+        fontPair: 'Montserrat|Open Sans',
+        aesthetic: 'Bold Offer Card',
+        showWatermark: true,
+        customLogoDataUrl: null,
+        handle: '@MetricFlowStudio',
+        board: 'Small Business Systems & Notion Templates',
+        url: 'https://metricflow.example.com/starter-kit'
+      }
+    ];
+
+    // Built-in procedural studio backdrops (100% self-contained, zero external broken URLs)
+    const BUILTIN_SCENES = [
+      { id: 'scene-1', label: 'Warm Ceramic Sunbeam', style: 'pottery-warm', selected: true },
+      { id: 'scene-2', label: 'Minimalist Arch Pedestal', style: 'arch-pedestal', selected: true },
+      { id: 'scene-3', label: 'Botanical Linen Flatlay', style: 'botanical-flatlay', selected: true },
+      { id: 'scene-4', label: 'Golden Hour Editorial', style: 'golden-editorial', selected: true },
+      { id: 'scene-5', label: 'Modern Studio Grid', style: 'studio-grid', selected: false },
+      { id: 'scene-6', label: 'Rustic Terracotta Shelf', style: 'terracotta-shelf', selected: false }
+    ];
+
+    let appState = {
+      activeBrandId: 'brand-pottery',
+      brands: JSON.parse(JSON.stringify(DEFAULT_BRANDS)),
+      prompt: 'Handcrafted speckled ceramic coffee mugs designed for slow, cozy mornings. Highlight gift-ready packaging and small-batch artisan craftsmanship.',
+      variationLevel: 2,
+      batchSize: 4,
+      uploadedPhotos: [], // { id, label, dataUrl, selected }
+      sceneSelection: BUILTIN_SCENES.map(s => ({ id: s.id, selected: s.selected })),
+      generatedPins: [],
+      selectedPinIndex: 0,
+      selectedDateStr: '',
+      scheduledQueue: [],
+      proUnlocked: false,
+      exportsUsed: 0
+    };
+
+    let pendingConfirmAction = null;
+
+    // =========================================================================
+    // 2. INITIALIZATION & LOCALSTORAGE SYNC
+    // =========================================================================
+    window.onload = function () {
+      loadState();
+      initDates();
+      renderBrandSelector();
+      syncBrandInputsToUI();
+      renderContentLibrary();
+      renderMiniCalendar();
+      renderScheduledQueue();
+      updateLicenseUI();
+
+      if (!appState.generatedPins || appState.generatedPins.length === 0) {
+        generateDailyPinBatch(true);
+      } else {
+        renderGeneratedPinsGrid();
+        syncSelectedPinToInspector();
+      }
+    };
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          appState = { ...appState, ...parsed };
+        }
+      } catch (e) {
+        console.warn('Could not load saved state:', e);
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      } catch (e) {
+        // Handle quota limits gracefully if user uploads huge images
+        showToast('Storage nearly full — consider removing unused uploaded photos.', 'warning');
+      }
+    }
+
+    function getActiveBrand() {
+      return appState.brands.find(b => b.id === appState.activeBrandId) || appState.brands[0];
+    }
+
+    function initDates() {
+      const now = new Date();
+      const options = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
+      document.getElementById('todayDateLabel').textContent = now.toLocaleDateString('en-US', options);
+
+      if (!appState.selectedDateStr) {
+        const tomorrow = new Date(now);
+        tomorrow.setDate(now.getDate() + 1);
+        appState.selectedDateStr = formatISODate(tomorrow);
+      }
+    }
+
+    function formatISODate(dateObj) {
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const d = String(dateObj.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    // =========================================================================
+    // 3. BRAND STUDIO CONTROLS & LIVE SYNC
+    // =========================================================================
+    function renderBrandSelector() {
+      const select = document.getElementById('brandProfileSelect');
+      select.innerHTML = appState.brands.map(b =>
+        `<option value="${b.id}" ${b.id === appState.activeBrandId ? 'selected' : ''}>${escapeHtml(b.name)} (${b.persona})</option>`
+      ).join('');
+    }
+
+    function switchBrandProfile(brandId) {
+      appState.activeBrandId = brandId;
+      const brand = getActiveBrand();
+      // Update prompt thoughtfully to match switched brand
+      appState.prompt = `Showcase ${brand.name}'s signature collection focusing on ${brand.keywords}. Speak directly to our ideal buyer with a ${brand.persona.toLowerCase()} voice.`;
+      syncBrandInputsToUI();
+      saveState();
+      generateDailyPinBatch(true);
+      showToast(`Switched to ${brand.name}`, 'info');
+    }
+
+    function createNewBrandProfile() {
+      const newId = 'brand-' + Date.now();
+      const newBrand = {
+        id: newId,
+        name: 'New Creator Brand',
+        persona: 'Friendly & Encouraging',
+        keywords: 'curated essentials, everyday inspiration, modern lifestyle',
+        colors: {
+          primary: '#2DD4BF',
+          secondary: '#1E293B',
+          canvas: '#F8FAFC'
+        },
+        fontPair: 'Montserrat|Open Sans',
+        aesthetic: 'Clean Minimalist',
+        showWatermark: true,
+        customLogoDataUrl: null,
+        handle: '@NewCreatorBrand',
+        board: 'Featured Products & Inspiration',
+        url: 'https://yourstore.example.com/featured'
+      };
+      appState.brands.push(newBrand);
+      appState.activeBrandId = newId;
+      renderBrandSelector();
+      syncBrandInputsToUI();
+      saveState();
+      generateDailyPinBatch(true);
+      showToast('Created new brand profile!', 'success');
+    }
+
+    function syncBrandInputsToUI() {
+      const brand = getActiveBrand();
+      document.getElementById('brandNameInput').value = brand.name;
+      document.getElementById('personaSelect').value = brand.persona;
+      document.getElementById('brandKeywordsInput').value = brand.keywords;
+
+      document.getElementById('colorPrimary').value = brand.colors.primary;
+      document.getElementById('hexPrimary').textContent = brand.colors.primary.toUpperCase();
+      document.getElementById('colorSecondary').value = brand.colors.secondary;
+      document.getElementById('hexSecondary').textContent = brand.colors.secondary.toUpperCase();
+      document.getElementById('colorCanvas').value = brand.colors.canvas;
+      document.getElementById('hexCanvas').textContent = brand.colors.canvas.toUpperCase();
+
+      document.getElementById('fontPairSelect').value = brand.fontPair;
+      document.getElementById('aestheticSelect').value = brand.aesthetic;
+      document.getElementById('showWatermarkToggle').checked = brand.showWatermark;
+
+      document.getElementById('pinterestHandleInput').value = brand.handle;
+      document.getElementById('pinterestBoardInput').value = brand.board;
+      document.getElementById('destUrlInput').value = brand.url;
+
+      document.getElementById('promptComposer').value = appState.prompt;
+      document.getElementById('batchSizeSelect').value = String(appState.batchSize);
+      document.getElementById('variationSlider').value = String(appState.variationLevel);
+      updateVariationLabel(appState.variationLevel, false);
+
+      updateLogoPreviewUI();
+    }
+
+    function updateActiveBrand(field, value) {
+      const brand = getActiveBrand();
+      brand[field] = value;
+      if (field === 'name') {
+        renderBrandSelector();
+        updateLogoPreviewUI();
+      }
+      saveState();
+      renderGeneratedPinsGrid();
+      if (field === 'persona' || field === 'keywords' || field === 'name') {
+        regenerateSeoForSelected();
+      }
+    }
+
+    function updateBrandColor(key, hex) {
+      const brand = getActiveBrand();
+      brand.colors[key] = hex;
+      document.getElementById('hex' + key.charAt(0).toUpperCase() + key.slice(1)).textContent = hex.toUpperCase();
+      saveState();
+      renderGeneratedPinsGrid();
+    }
+
+    function updateLogoPreviewUI() {
+      const brand = getActiveBrand();
+      const box = document.getElementById('logoPreviewBox');
+      if (brand.customLogoDataUrl) {
+        box.innerHTML = `<img src="${brand.customLogoDataUrl}" alt="Brand Logo" class="w-full h-full object-cover" />`;
+      } else {
+        const initials = (brand.name || 'PG')
+          .split(/\s+/)
+          .filter(Boolean)
+          .slice(0, 2)
+          .map(w => w[0].toUpperCase())
+          .join('');
+        box.innerHTML = `<span>${initials || 'PG'}</span>`;
+      }
+    }
+
+    function handleLogoUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const brand = getActiveBrand();
+        brand.customLogoDataUrl = e.target.result;
+        updateLogoPreviewUI();
+        saveState();
+        renderGeneratedPinsGrid();
+        showToast('Custom brand logo applied to all pins!', 'success');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearCustomLogo() {
+      const brand = getActiveBrand();
+      brand.customLogoDataUrl = null;
+      updateLogoPreviewUI();
+      saveState();
+      renderGeneratedPinsGrid();
+      showToast('Switched to auto-monogram stamp.', 'info');
+    }
+
+    // =========================================================================
+    // 4. CONTENT LIBRARY (PROCEDURAL SCENES + USER DRAG & DROP PHOTOS)
+    // =========================================================================
+    function handleDragOver(e) {
+      e.preventDefault();
+      document.getElementById('dropZone').classList.add('border-tealBrand', 'bg-tealBrand/10');
+    }
+
+    function handleDragLeave(e) {
+      e.preventDefault();
+      document.getElementById('dropZone').classList.remove('border-tealBrand', 'bg-tealBrand/10');
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      document.getElementById('dropZone').classList.remove('border-tealBrand', 'bg-tealBrand/10');
+      if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+        processUploadedFiles(e.dataTransfer.files);
+      }
+    }
+
+    function handleProductPhotoUpload(event) {
+      if (event.target.files.length > 0) {
+        processUploadedFiles(event.target.files);
+      }
+    }
+
+    function processUploadedFiles(fileList) {
+      const files = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+      if (files.length === 0) return;
+
+      let loadedCount = 0;
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          // Downscale uploaded image gracefully to max 900px so localStorage stays fast
+          const img = new Image();
+          img.onload = function () {
+            const canvas = document.createElement('canvas');
+            const maxDim = 900;
+            let w = img.width;
+            let h = img.height;
+            if (w > maxDim || h > maxDim) {
+              if (w > h) {
+                h = Math.round((h * maxDim) / w);
+                w = maxDim;
+              } else {
+                w = Math.round((w * maxDim) / h);
+                h = maxDim;
+              }
+            }
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+            appState.uploadedPhotos.unshift({
+              id: 'upload-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+              label: file.name.replace(/\.[^/.]+$/, ''),
+              dataUrl: compressedDataUrl,
+              selected: true
+            });
+
+            loadedCount++;
+            if (loadedCount === files.length) {
+              saveState();
+              renderContentLibrary();
+              generateDailyPinBatch(true);
+              showToast(`Added ${loadedCount} product photo(s) to Content Library!`, 'success');
+            }
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function toggleLibraryItem(type, id) {
+      if (type === 'upload') {
+        const item = appState.uploadedPhotos.find(p => p.id === id);
+        if (item) item.selected = !item.selected;
+      } else {
+        const item = appState.sceneSelection.find(s => s.id === id);
+        if (item) item.selected = !item.selected;
+      }
+      saveState();
+      renderContentLibrary();
+    }
+
+    function removeUploadedPhoto(e, id) {
+      e.stopPropagation();
+      appState.uploadedPhotos = appState.uploadedPhotos.filter(p => p.id !== id);
+      saveState();
+      renderContentLibrary();
+      showToast('Removed photo from library.', 'info');
+    }
+
+    function renderContentLibrary() {
+      const grid = document.getElementById('libraryGrid');
+      const brand = getActiveBrand();
+      let html = '';
+
+      // Render User Uploaded Photos first
+      appState.uploadedPhotos.forEach(photo => {
+        html += `
+          <div onclick="toggleLibraryItem('upload', '${photo.id}')" class="relative group aspect-square rounded-xl overflow-hidden cursor-pointer border-2 transition ${photo.selected ? 'border-tealBrand' : 'border-borderDark opacity-55'}">
+            <img src="${photo.dataUrl}" alt="${escapeHtml(photo.label)}" class="w-full h-full object-cover" />
+            <div class="absolute top-1 left-1 w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${photo.selected ? 'bg-tealBrand text-slateDark font-bold' : 'bg-slateDark/80 text-slate-400'}">
+              <i class="fa-solid fa-check"></i>
+            </div>
+            <button onclick="removeUploadedPhoto(event, '${photo.id}')" class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 w-5 h-5 rounded-full bg-rose-600 text-white text-[10px] flex items-center justify-center transition" title="Delete photo">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        `;
+      });
+
+      // Render Built-in Studio Scenes
+      BUILTIN_SCENES.forEach(scene => {
+        const selObj = appState.sceneSelection.find(s => s.id === scene.id);
+        const isSelected = selObj ? selObj.selected : true;
+        const thumbSvg = buildScenePreviewSVG(scene.style, brand.colors);
+        html += `
+          <div onclick="toggleLibraryItem('scene', '${scene.id}')" title="${scene.label}" class="relative aspect-square rounded-xl overflow-hidden cursor-pointer border-2 transition ${isSelected ? 'border-tealBrand' : 'border-borderDark opacity-55'}">
+            ${thumbSvg}
+            <div class="absolute top-1 left-1 w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${isSelected ? 'bg-tealBrand text-slateDark font-bold' : 'bg-slateDark/80 text-slate-400'}">
+              <i class="fa-solid fa-check"></i>
+            </div>
+            <span class="absolute bottom-0 inset-x-0 bg-slateDark/80 text-[9px] text-slate-200 px-1.5 py-0.5 truncate">${scene.label}</span>
+          </div>
+        `;
+      });
+
+      grid.innerHTML = html;
+    }
+
+    function buildScenePreviewSVG(style, colors) {
+      const p = colors.primary;
+      const s = colors.secondary;
+      const c = colors.canvas;
+      return `
+        <svg viewBox="0 0 120 120" class="w-full h-full block">
+          <defs>
+            <linearGradient id="g-${style}" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="${c}" />
+              <stop offset="100%" stop-color="${p}" stop-opacity="0.45" />
+            </linearGradient>
+          </defs>
+          <rect width="120" height="120" fill="url(#g-${style})" />
+          <circle cx="88" cy="30" r="24" fill="${p}" opacity="0.35" />
+          <path d="M25,120 L25,68 A35,35 0 0,1 95,68 L95,120 Z" fill="${s}" opacity="0.85" />
+          <rect x="42" y="54" width="36" height="44" rx="8" fill="${c}" opacity="0.92" />
+        </svg>
+      `;
+    }
+
+    // =========================================================================
+    // 5. DAILY PIN GENERATION ENGINE (PERSONA COPY + LAYOUT MATRIX)
+    // =========================================================================
+    function applyHookAngle(angle) {
+      const brand = getActiveBrand();
+      const anglePrompts = {
+        'Gift Guide': `Curated Gift Guide: Why ${brand.name} (${brand.keywords}) is the #1 thoughtful gift pick this season. Highlight gift-ready quality and customer favorites.`,
+        'Bestseller': `Bestseller Spotlight: Discover the most-saved pieces from ${brand.name}. Focus on ${brand.keywords} with high social proof and irresistible value.`,
+        'Problem/Solution': `3 Easy Ways to Upgrade Your Routine with ${brand.name}. Practical tips featuring ${brand.keywords} designed for effortless daily results.`,
+        'Seasonal Drop': `New Seasonal Release from ${brand.name}! Limited small-batch drop featuring ${brand.keywords}. Shop early before favorites sell out.`
+      };
+      appState.prompt = anglePrompts[angle] || appState.prompt;
+      document.getElementById('promptComposer').value = appState.prompt;
+      saveState();
+      generateDailyPinBatch();
+    }
+
+    function updateVariationLabel(val, regenerate = true) {
+      appState.variationLevel = Number(val);
+      const labels = { 1: 'Subtle', 2: 'Moderate', 3: 'Bold Remix' };
+      document.getElementById('variationLabel').textContent = labels[appState.variationLevel] || 'Moderate';
+      saveState();
+      if (regenerate) {
+        renderGeneratedPinsGrid();
+      }
+    }
+
+    function generateDailyPinBatch(silent = false) {
+      const brand = getActiveBrand();
+      appState.prompt = document.getElementById('promptComposer').value.trim() || appState.prompt;
+      appState.batchSize = Number(document.getElementById('batchSizeSelect').value) || 4;
+
+      // Build active media pool (uploaded photos + selected studio scenes)
+      const activePool = [];
+      appState.uploadedPhotos.filter(p => p.selected).forEach(p => {
+        activePool.push({ type: 'upload', id: p.id, dataUrl: p.dataUrl, label: p.label });
+      });
+      BUILTIN_SCENES.forEach(scene => {
+        const sel = appState.sceneSelection.find(s => s.id === scene.id);
+        if (!sel || sel.selected) {
+          activePool.push({ type: 'scene', id: scene.id, style: scene.style, label: scene.label });
+        }
+      });
+      if (activePool.length === 0) {
+        activePool.push({ type: 'scene', id: 'scene-1', style: 'pottery-warm', label: 'Warm Studio' });
+      }
+
+      const headlines = buildPersonaHeadlines(brand, appState.prompt, appState.batchSize);
+      const layoutVariants = ['editorial-top', 'split-bottom', 'center-arch', 'banner-bold', 'floating-card', 'minimal-frame'];
+
+      const newPins = [];
+      for (let i = 0; i < appState.batchSize; i++) {
+        const media = activePool[i % activePool.length];
+        const copyObj = headlines[i];
+        const seoObj = buildSeoCopyForPin(brand, copyObj, appState.prompt, i);
+
+        newPins.push({
+          id: 'pin-' + Date.now() + '-' + i,
+          index: i + 1,
+          headline: copyObj.headline,
+          subheadline: copyObj.subheadline,
+          cta: copyObj.cta,
+          badgeText: copyObj.badge,
+          layoutVariant: layoutVariants[i % layoutVariants.length],
+          media,
+          seoTitle: seoObj.title,
+          seoDescription: seoObj.description
+        });
+      }
+
+      appState.generatedPins = newPins;
+      appState.selectedPinIndex = 0;
+      saveState();
+      renderGeneratedPinsGrid();
+      syncSelectedPinToInspector();
+
+      if (!silent) {
+        showToast(`Generated ${newPins.length} brand-locked Pinterest pins!`, 'success');
+      }
+    }
+
+    function buildPersonaHeadlines(brand, prompt, count) {
+      const primaryKeyword = (brand.keywords.split(',')[0] || brand.name).trim();
+      const capKeyword = primaryKeyword.replace(/\b\w/g, l => l.toUpperCase());
+
+      const personaBank = {
+        'Friendly & Encouraging': [
+          { headline: `Bring Joy to Every Day with ${capKeyword}`, subheadline: `Hand-selected favorites crafted with care by ${brand.name}`, cta: 'Explore Collection', badge: 'COMMUNITY FAVORITE' },
+          { headline: `The Coziest ${capKeyword} You'll Ever Own`, subheadline: `Thoughtfully made for slow mornings & meaningful gifting`, cta: 'Shop Favorites', badge: 'GIFT IDEA' },
+          { headline: `5 Reasons Creators Love Our ${capKeyword}`, subheadline: `Elevate your everyday routine effortlessly`, cta: 'See The Collection', badge: 'DAILY INSPIRATION' },
+          { headline: `Your New Favorite ${capKeyword} Is Here`, subheadline: `Small-batch quality designed to brighten your space`, cta: 'Shop Now', badge: 'NEW ARRIVAL' },
+          { headline: `Simple Upgrades That Feel Like a Treat`, subheadline: `Discover why thousands save ${brand.name} daily`, cta: 'Browse Shop', badge: 'EDITOR PICK' },
+          { headline: `Made to Be Loved & Shared`, subheadline: `Timeless ${primaryKeyword} ready for your wishlist`, cta: 'Save & Shop', badge: 'MUST-HAVE' }
+        ],
+        'Bold & Direct-Response': [
+          { headline: `Upgrade Your ${capKeyword} Today`, subheadline: `High-impact quality engineered for real results`, cta: 'Shop Now →', badge: 'BESTSELLER' },
+          { headline: `Stop Settling for Ordinary ${capKeyword}`, subheadline: `See why 10,000+ customers switched to ${brand.name}`, cta: 'Get Yours Now', badge: 'TOP RATED' },
+          { headline: `The #1 ${capKeyword} Worth Every Penny`, subheadline: `Instant polish, zero guesswork, fast shipping`, cta: 'Claim Yours', badge: 'PROVEN PICK' },
+          { headline: `Everything You Need in One ${capKeyword}`, subheadline: `Built to perform from day one`, cta: 'Explore Now', badge: 'TRENDING' },
+          { headline: `Don't Miss This ${capKeyword} Upgrade`, subheadline: `Limited quantities available in this release`, cta: 'Order Today', badge: 'HOT DROP' },
+          { headline: `Your Shortcut to Effortless Style`, subheadline: `Signature ${primaryKeyword} by ${brand.name}`, cta: 'Shop Collection', badge: 'FEATURED' }
+        ],
+        'Luxury Editorial': [
+          { headline: `The Art of Refined ${capKeyword}`, subheadline: `An understated study in texture, form & permanence`, cta: 'Discover the Edit', badge: 'THE EDIT' },
+          { headline: `Quiet Luxury: ${capKeyword}`, subheadline: `Curated for discerning spaces by ${brand.name}`, cta: 'View Lookbook', badge: 'ATELIER SERIES' },
+          { headline: `Timeless Silhouettes & ${capKeyword}`, subheadline: `Crafted in small editions with enduring grace`, cta: 'Acquire Now', badge: 'LIMITED EDITION' },
+          { headline: `A Modern Ritual in ${capKeyword}`, subheadline: `Elevate the everyday into an art form`, cta: 'Explore Atelier', badge: 'CURATED' },
+          { headline: `Signature Craftsmanship by ${brand.name}`, subheadline: `Where heritage technique meets modern restraint`, cta: 'Shop the Capsule', badge: 'CAPSULE' },
+          { headline: `Collected Pieces for Considered Living`, subheadline: `Explore our latest ${primaryKeyword} release`, cta: 'Enter Studio', badge: 'ARCHIVE' }
+        ],
+        'Cozy & Relatable': [
+          { headline: `Slow Mornings & ${capKeyword}`, subheadline: `The little everyday comfort you didn't know you needed`, cta: 'Come Take a Look', badge: 'COZY VIBES' },
+          { headline: `POV: You Found the Dreamiest ${capKeyword}`, subheadline: `Instant warmth for your favorite corner at home`, cta: 'Shop Cozy Picks', badge: 'PINNER FAVE' },
+          { headline: `Save This for Your Next Gift Idea`, subheadline: `Thoughtful ${primaryKeyword} made with heart`, cta: 'See Details', badge: 'SAVE FOR LATER' },
+          { headline: `Little Details That Make Home Feel Like Home`, subheadline: `Handcrafted goodness from ${brand.name}`, cta: 'Browse Goods', badge: 'SMALL SHOP' },
+          { headline: `Weekend Rituals Start Right Here`, subheadline: `Wrap yourself in comfort with ${primaryKeyword}`, cta: 'Shop the Mood', badge: 'WEEKEND EDIT' },
+          { headline: `Obsessed With This ${capKeyword} Aesthetic`, subheadline: `Warm tones, tactile textures, pure comfort`, cta: 'Get the Look', badge: 'AESTHETIC' }
+        ],
+        'Urgent Deal Hunter': [
+          { headline: `Selling Fast: Signature ${capKeyword}`, subheadline: `Grab our most-requested drop before restock closes`, cta: 'Shop Before Gone', badge: 'SELLING FAST' },
+          { headline: `Insider Alert: ${capKeyword} Restocked!`, subheadline: `Our fastest-selling ${primaryKeyword} is finally back`, cta: 'Snag Yours Fast', badge: 'BACK IN STOCK' },
+          { headline: `Top Pinners Are Saving This ${capKeyword}`, subheadline: `Don't wait—limited small-batch inventory left`, cta: 'Check Availability', badge: 'VIRAL PICK' },
+          { headline: `Last Chance for This Season's ${capKeyword}`, subheadline: `Once this batch sells out, it's gone for good`, cta: 'Shop the Drop', badge: 'LIMITED RUN' },
+          { headline: `Best Value ${capKeyword} of the Season`, subheadline: `Direct-from-studio pricing at ${brand.name}`, cta: 'Unlock Offer', badge: 'BEST VALUE' },
+          { headline: `Ready to Ship: ${capKeyword} Favorites`, subheadline: `Order today for fast studio dispatch`, cta: 'Order Now', badge: 'IN STOCK' }
+        ]
+      };
+
+      const list = personaBank[brand.persona] || personaBank['Friendly & Encouraging'];
+      const results = [];
+      for (let i = 0; i < count; i++) {
+        results.push({ ...list[i % list.length] });
+      }
+      return results;
+    }
+
+    function buildSeoCopyForPin(brand, copyObj, prompt, index) {
+      const kws = brand.keywords.split(',').map(k => k.trim()).filter(Boolean);
+      const mainKw = kws[0] || brand.name;
+      const secondKw = kws[1] || 'gift ideas';
+      const thirdKw = kws[2] || 'aesthetic inspiration';
+
+      const hashtags = kws
+        .map(k => '#' + k.replace(/[^a-zA-Z0-9]/g, '').toLowerCase())
+        .slice(0, 4)
+        .join(' ');
+
+      const rawTitle = `${copyObj.headline} | ${brand.name}`;
+      const title = rawTitle.slice(0, 100);
+
+      const descTemplates = [
+        `Looking for ${mainKw} and ${secondKw}? ${copyObj.subheadline}. Discover how ${brand.name} brings ${thirdKw} into your everyday life. Save this pin to your ${brand.board} board and tap through to explore the full collection! ${hashtags} #pinterestfinds`,
+        `Save this for later! ✨ ${copyObj.headline} — crafted by ${brand.name} for lovers of ${mainKw} and ${secondKw}. ${prompt.slice(0, 120)}... Tap to shop now! ${hashtags} #curatedstyle`,
+        `Elevate your space with ${mainKw} from ${brand.name}. Whether you're shopping for ${secondKw} or treating yourself to ${thirdKw}, our latest collection is designed to inspire. Click to view details! ${hashtags}`
+      ];
+
+      const description = descTemplates[index % descTemplates.length].slice(0, 500);
+      return { title, description };
+    }
+
+    // =========================================================================
+    // 6. HIGH-DPI HTML5 CANVAS PIN RENDERER (LIVE PREVIEW + 1000x1500 EXPORT)
+    // =========================================================================
+    async function renderPinToCanvas(canvas, pin, brand, variationLevel, aesthetic) {
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width;  // 1000
+      const H = canvas.height; // 1500
+
+      const [headingFont, bodyFont] = (brand.fontPair || 'Playfair Display|Lato').split('|');
+      const cPrimary = brand.colors.primary;
+      const cSecondary = brand.colors.secondary;
+      const cCanvas = brand.colors.canvas;
+
+      // Determine color polarity based on pin index & variation slider
+      const invertPalette = (variationLevel >= 2 && pin.index % 2 === 0);
+      const bgColor = invertPalette ? cSecondary : cCanvas;
+      const cardSurface = invertPalette ? lightenOrDarken(cSecondary, 14) : '#FFFFFF';
+      const inkColor = invertPalette ? cCanvas : cSecondary;
+      const accentColor = cPrimary;
+
+      // 1. Base Background Fill
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, W, H);
+
+      // Subtle decorative geometric accents based on variation level
+      if (variationLevel >= 2) {
+        ctx.save();
+        ctx.fillStyle = accentColor;
+        ctx.globalAlpha = 0.14;
+        ctx.beginPath();
+        ctx.arc(pin.index % 2 === 0 ? W - 110 : 110, 160, 240, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // 2. Compute Image Frame Geometry based on Aesthetic & Layout Variant
+      let imgX = 70, imgY = 390, imgW = W - 140, imgH = 780, imgRadius = 36, archTop = false;
+
+      if (aesthetic === 'Clean Minimalist' || pin.layoutVariant === 'minimal-frame') {
+        imgX = 85; imgY = 120; imgW = W - 170; imgH = 820; imgRadius = 24;
+      } else if (aesthetic === 'Bold Offer Card' || pin.layoutVariant === 'banner-bold') {
+        imgX = 0; imgY = 0; imgW = W; imgH = 920; imgRadius = 0;
+      } else if (aesthetic === 'Rustic Craft' || pin.layoutVariant === 'center-arch') {
+        imgX = 110; imgY = 360; imgW = W - 220; imgH = 800; archTop = true;
+      } else if (aesthetic === 'Modern Luxe' || pin.layoutVariant === 'split-bottom') {
+        imgX = 65; imgY = 80; imgW = W - 130; imgH = 860; imgRadius = 40;
+      }
+
+      // 3. Draw Product Photo or Procedural Studio Illustration inside clipped frame
+      ctx.save();
+      drawRoundedOrArchPath(ctx, imgX, imgY, imgW, imgH, imgRadius, archTop);
+      ctx.clip();
+
+      if (pin.media && pin.media.type === 'upload' && pin.media.dataUrl) {
+        const loadedImg = await loadImageAsync(pin.media.dataUrl);
+        drawImageCover(ctx, loadedImg, imgX, imgY, imgW, imgH);
+      } else {
+        drawProceduralStudioBackdrop(ctx, pin.media ? pin.media.style : 'pottery-warm', imgX, imgY, imgW, imgH, brand.colors, pin.index);
+      }
+
+      // Subtle vignette on full-bleed banner mode for readability
+      if (imgRadius === 0) {
+        const grad = ctx.createLinearGradient(0, imgY + imgH - 280, 0, imgY + imgH);
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(1, 'rgba(0,0,0,0.45)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(imgX, imgY, imgW, imgH);
+      }
+      ctx.restore();
+
+      // Frame border accent
+      ctx.save();
+      drawRoundedOrArchPath(ctx, imgX, imgY, imgW, imgH, imgRadius, archTop);
+      ctx.lineWidth = variationLevel === 3 ? 6 : 3;
+      ctx.strokeStyle = accentColor;
+      ctx.stroke();
+      ctx.restore();
+
+      // 4. Typography & Overlay Layout Blocks
+      const isTopHeadlineLayout = (aesthetic === 'Warm Editorial' || aesthetic === 'Rustic Craft' || pin.layoutVariant === 'editorial-top' || pin.layoutVariant === 'center-arch');
+
+      if (isTopHeadlineLayout) {
+        // Top Badge Pill
+        drawPillBadge(ctx, W / 2, 105, pin.badgeText, accentColor, cSecondary, bodyFont);
+
+        // Main Headline at Top
+        ctx.fillStyle = inkColor;
+        ctx.textAlign = 'center';
+        ctx.font = `700 62px "${headingFont}", Georgia, serif`;
+        wrapCanvasText(ctx, pin.headline, W / 2, 195, W - 150, 74, 2);
+
+        // Bottom Subheadline & CTA Card
+        ctx.fillStyle = cardSurface;
+        roundRectFill(ctx, 90, 1110, W - 180, 290, 32);
+        ctx.strokeStyle = accentColor;
+        ctx.lineWidth = 2;
+        roundRectStroke(ctx, 90, 1110, W - 180, 290, 32);
+
+        ctx.fillStyle = invertPalette ? cCanvas : cSecondary;
+        ctx.font = `500 30px "${bodyFont}", sans-serif`;
+        wrapCanvasText(ctx, pin.subheadline, W / 2, 1175, W - 260, 40, 2);
+
+        drawCtaButton(ctx, W / 2, 1315, pin.cta, accentColor, cSecondary, bodyFont);
+      } else {
+        // Bottom Editorial / Conversion Card Layout
+        const panelY = 890;
+        ctx.fillStyle = cardSurface;
+        roundRectFill(ctx, 65, panelY, W - 130, 520, 36);
+        ctx.strokeStyle = accentColor;
+        ctx.lineWidth = 3;
+        roundRectStroke(ctx, 65, panelY, W - 130, 520, 36);
+
+        drawPillBadge(ctx, W / 2, panelY + 58, pin.badgeText, accentColor, cSecondary, bodyFont);
+
+        ctx.fillStyle = invertPalette ? cCanvas : cSecondary;
+        ctx.textAlign = 'center';
+        ctx.font = `700 58px "${headingFont}", Georgia, serif`;
+        wrapCanvasText(ctx, pin.headline, W / 2, panelY + 145, W - 210, 70, 2);
+
+        ctx.fillStyle = invertPalette ? '#CBD5E1' : '#475569';
+        ctx.font = `400 29px "${bodyFont}", sans-serif`;
+        wrapCanvasText(ctx, pin.subheadline, W / 2, panelY + 295, W - 230, 38, 2);
+
+        drawCtaButton(ctx, W / 2, panelY + 425, pin.cta, accentColor, cSecondary, bodyFont);
+      }
+
+      // 5. Brand Logo / Monogram Stamp & Domain Footer
+      if (brand.showWatermark) {
+        await drawBrandWatermark(ctx, W, H, brand, accentColor, cSecondary, bodyFont);
+      }
+    }
+
+    function drawRoundedOrArchPath(ctx, x, y, w, h, r, isArch) {
+      ctx.beginPath();
+      if (isArch) {
+        const archR = w / 2;
+        ctx.moveTo(x, y + h);
+        ctx.lineTo(x, y + archR);
+        ctx.arc(x + archR, y + archR, archR, Math.PI, 0, false);
+        ctx.lineTo(x + w, y + h);
+        ctx.closePath();
+      } else if (r <= 0) {
+        ctx.rect(x, y, w, h);
+      } else {
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+      }
+    }
+
+    function roundRectFill(ctx, x, y, w, h, r) {
+      drawRoundedOrArchPath(ctx, x, y, w, h, r, false);
+      ctx.fill();
+    }
+
+    function roundRectStroke(ctx, x, y, w, h, r) {
+      drawRoundedOrArchPath(ctx, x, y, w, h, r, false);
+      ctx.stroke();
+    }
+
+    function drawPillBadge(ctx, cx, cy, text, bgHex, textHex, font) {
+      ctx.save();
+      ctx.font = `700 21px "${font}", sans-serif`;
+      const label = (text || 'FEATURED').toUpperCase();
+      const metrics = ctx.measureText(label);
+      const padX = 34;
+      const bw = Math.max(200, metrics.width + padX * 2);
+      const bh = 46;
+
+      ctx.fillStyle = bgHex;
+      roundRectFill(ctx, cx - bw / 2, cy - bh / 2, bw, bh, 23);
+
+      ctx.fillStyle = getContrastInk(bgHex);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, cx, cy + 1);
+      ctx.restore();
+    }
+
+    function drawCtaButton(ctx, cx, cy, text, bgHex, fallbackInk, font) {
+      ctx.save();
+      ctx.font = `700 28px "${font}", sans-serif`;
+      const label = text || 'Shop Now';
+      const metrics = ctx.measureText(label);
+      const bw = Math.max(300, metrics.width + 90);
+      const bh = 74;
+
+      // Subtle shadow
+      ctx.shadowColor = 'rgba(0,0,0,0.18)';
+      ctx.shadowBlur = 18;
+      ctx.shadowOffsetY = 8;
+
+      ctx.fillStyle = bgHex;
+      roundRectFill(ctx, cx - bw / 2, cy - bh / 2, bw, bh, 37);
+
+      ctx.shadowColor = 'transparent';
+      ctx.fillStyle = getContrastInk(bgHex);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, cx, cy + 2);
+      ctx.restore();
+    }
+
+    async function drawBrandWatermark(ctx, W, H, brand, accentColor, secondaryColor, bodyFont) {
+      ctx.save();
+      const footerY = H - 46;
+      const cleanDomain = (brand.url || brand.name)
+        .replace(/^https?:\/\//, '')
+        .split('/')[0]
+        .toUpperCase();
+
+      ctx.font = `600 22px "${bodyFont}", sans-serif`;
+      ctx.fillStyle = accentColor;
+      ctx.textAlign = 'center';
+      ctx.fillText(`${brand.name.toUpperCase()}  •  ${cleanDomain}`, W / 2, footerY);
+
+      // Circular Logo Stamp on top-left corner of pin
+      const stampX = 115;
+      const stampY = 115;
+      const stampR = 46;
+
+      ctx.beginPath();
+      ctx.arc(stampX, stampY, stampR, 0, Math.PI * 2);
+      ctx.fillStyle = secondaryColor;
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = accentColor;
+      ctx.stroke();
+
+      if (brand.customLogoDataUrl) {
+        const logoImg = await loadImageAsync(brand.customLogoDataUrl);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(stampX, stampY, stampR - 3, 0, Math.PI * 2);
+        ctx.clip();
+        drawImageCover(ctx, logoImg, stampX - stampR, stampY - stampR, stampR * 2, stampR * 2);
+        ctx.restore();
+      } else {
+        const initials = (brand.name || 'PG')
+          .split(/\s+/)
+          .filter(Boolean)
+          .slice(0, 2)
+          .map(w => w[0].toUpperCase())
+          .join('');
+        ctx.fillStyle = accentColor;
+        ctx.font = '700 30px "Playfair Display", serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(initials || 'PG', stampX, stampY + 2);
+      }
+      ctx.restore();
+    }
+
+    function drawProceduralStudioBackdrop(ctx, style, x, y, w, h, colors, seedIndex) {
+      const grad = ctx.createLinearGradient(x, y, x + w, y + h);
+      grad.addColorStop(0, colors.canvas);
+      grad.addColorStop(0.55, blendHex(colors.canvas, colors.primary, 0.28));
+      grad.addColorStop(1, blendHex(colors.secondary, colors.primary, 0.35));
+      ctx.fillStyle = grad;
+      ctx.fillRect(x, y, w, h);
+
+      // Soft sunbeam / studio spotlight
+      const sunGrad = ctx.createRadialGradient(x + w * 0.72, y + h * 0.24, 20, x + w * 0.72, y + h * 0.24, w * 0.65);
+      sunGrad.addColorStop(0, 'rgba(255,255,255,0.65)');
+      sunGrad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = sunGrad;
+      ctx.fillRect(x, y, w, h);
+
+      // Architectural Pedestal & Studio Prop Silhouette
+      const cx = x + w / 2;
+      const baseY = y + h * 0.84;
+
+      // Pedestal surface
+      ctx.fillStyle = blendHex(colors.secondary, colors.canvas, 0.25);
+      ctx.fillRect(x, baseY, w, y + h - baseY);
+
+      // Decorative Arch behind product
+      ctx.fillStyle = colors.primary;
+      ctx.globalAlpha = 0.22;
+      ctx.beginPath();
+      ctx.arc(cx, baseY - 220, 210, Math.PI, 0, false);
+      ctx.lineTo(cx + 210, baseY);
+      ctx.lineTo(cx - 210, baseY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // Stylized Artisan Vessel / Product Showcase Form
+      const vesselW = 230 + (seedIndex % 3) * 24;
+      const vesselH = 260 + (seedIndex % 2) * 35;
+      const vx = cx - vesselW / 2;
+      const vy = baseY - vesselH;
+
+      // Vessel shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.16)';
+      ctx.beginPath();
+      ctx.ellipse(cx + 18, baseY + 6, vesselW * 0.56, 22, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Vessel body
+      const vGrad = ctx.createLinearGradient(vx, vy, vx + vesselW, vy + vesselH);
+      vGrad.addColorStop(0, '#FFFFFF');
+      vGrad.addColorStop(0.5, colors.canvas);
+      vGrad.addColorStop(1, blendHex(colors.canvas, colors.secondary, 0.22));
+      ctx.fillStyle = vGrad;
+      roundRectFill(ctx, vx, vy, vesselW, vesselH, 46);
+
+      // Clay / Accent dipped base band
+      ctx.save();
+      drawRoundedOrArchPath(ctx, vx, vy, vesselW, vesselH, 46, false);
+      ctx.clip();
+      ctx.fillStyle = colors.primary;
+      ctx.globalAlpha = 0.72;
+      ctx.fillRect(vx, vy + vesselH * 0.68, vesselW, vesselH * 0.34);
+      ctx.restore();
+
+      // Handle ring if odd index
+      if (seedIndex % 2 === 1) {
+        ctx.strokeStyle = colors.canvas;
+        ctx.lineWidth = 22;
+        ctx.beginPath();
+        ctx.arc(vx + vesselW - 4, vy + vesselH * 0.45, 58, -Math.PI * 0.48, Math.PI * 0.48);
+        ctx.stroke();
+      }
+    }
+
+    function wrapCanvasText(ctx, text, cx, startY, maxWidth, lineHeight, maxLines) {
+      const words = (text || '').split(/\s+/);
+      let line = '';
+      const lines = [];
+
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line ? line + ' ' + words[n] : words[n];
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width > maxWidth && n > 0) {
+          lines.push(line);
+          line = words[n];
+        } else {
+          line = testLine;
+        }
+      }
+      if (line) lines.push(line);
+
+      const visibleLines = lines.slice(0, maxLines);
+      visibleLines.forEach((l, idx) => {
+        ctx.fillText(l, cx, startY + idx * lineHeight);
+      });
+    }
+
+    function drawImageCover(ctx, img, x, y, w, h) {
+      const imgRatio = img.width / img.height;
+      const targetRatio = w / h;
+      let sx = 0, sy = 0, sw = img.width, sh = img.height;
+
+      if (imgRatio > targetRatio) {
+        sw = img.height * targetRatio;
+        sx = (img.width - sw) / 2;
+      } else {
+        sh = img.width / targetRatio;
+        sy = (img.height - sh) / 2;
+      }
+      ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+    }
+
+    function loadImageAsync(src) {
+      return new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(img);
+        img.src = src;
+      });
+    }
+
+    // =========================================================================
+    // 7. PIN GRID RENDERING, INLINE EDITING & HIGH-RES PNG EXPORT
+    // =========================================================================
+    async function renderGeneratedPinsGrid() {
+      const grid = document.getElementById('pinsGrid');
+      const brand = getActiveBrand();
+
+      // Create card skeletons if count changed
+      if (grid.children.length !== appState.generatedPins.length) {
+        grid.innerHTML = appState.generatedPins.map((pin, idx) => `
+          <div id="pinCard-${idx}" onclick="selectPin(${idx})" class="group relative bg-cardDark border border-borderDark rounded-2xl p-2.5 flex flex-col gap-2.5 cursor-pointer transition hover:border-tealBrand/60 ${idx === appState.selectedPinIndex ? 'pin-card-ring' : ''}">
+            <div class="flex items-center justify-between px-1">
+              <span class="text-xs font-bold ${idx === appState.selectedPinIndex ? 'text-tealBrand' : 'text-slate-300'}">
+                Pin ${pin.index} ${idx === appState.selectedPinIndex ? '(Selected)' : ''}
+              </span>
+              <span class="text-[10px] uppercase tracking-wider text-slate-400 bg-slateDark px-2 py-0.5 rounded">${pin.badgeText}</span>
+            </div>
+
+            <!-- 2:3 Aspect Ratio Live Preview Canvas -->
+            <div class="relative w-full aspect-[2/3] rounded-xl overflow-hidden bg-slateDark shadow-inner">
+              <canvas id="previewCanvas-${idx}" width="500" height="750" class="w-full h-full object-cover block"></canvas>
+            </div>
+
+            <!-- Quick Card Actions -->
+            <div class="flex items-center gap-2 pt-0.5">
+              <button onclick="event.stopPropagation(); downloadSinglePinPNG(${idx})" class="flex-1 py-1.5 px-2.5 rounded-xl bg-slateDark hover:bg-tealBrand hover:text-slateDark text-slate-200 border border-borderDark text-xs font-semibold transition flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-download"></i>
+                <span>PNG (1000×1500)</span>
+              </button>
+              <button onclick="event.stopPropagation(); selectPin(${idx}); scheduleSelectedPin()" class="py-1.5 px-2.5 rounded-xl bg-slateDark hover:bg-goldBrand hover:text-slateDark text-goldBrand border border-borderDark text-xs font-semibold transition" title="Quick Add to Schedule Queue">
+                <i class="fa-regular fa-calendar-plus"></i>
+              </button>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        // Update selection ring styling smoothly without rebuilding DOM
+        appState.generatedPins.forEach((pin, idx) => {
+          const card = document.getElementById(`pinCard-${idx}`);
+          if (card) {
+            if (idx === appState.selectedPinIndex) {
+              card.classList.add('pin-card-ring');
+            } else {
+              card.classList.remove('pin-card-ring');
+            }
+            const labelEl = card.querySelector('span');
+            if (labelEl) {
+              labelEl.textContent = `Pin ${pin.index} ${idx === appState.selectedPinIndex ? '(Selected)' : ''}`;
+              labelEl.className = `text-xs font-bold ${idx === appState.selectedPinIndex ? 'text-tealBrand' : 'text-slate-300'}`;
+            }
+          }
+        });
+      }
+
+      // Paint each preview canvas at 500x750 crisp resolution
+      for (let i = 0; i < appState.generatedPins.length; i++) {
+        const c = document.getElementById(`previewCanvas-${i}`);
+        if (c) {
+          await renderPinToCanvas(c, appState.generatedPins[i], brand, appState.variationLevel, brand.aesthetic);
+        }
+      }
+    }
+
+    function selectPin(index) {
+      appState.selectedPinIndex = index;
+      saveState();
+      renderGeneratedPinsGrid();
+      syncSelectedPinToInspector();
+    }
+
+    function syncSelectedPinToInspector() {
+      const pin = appState.generatedPins[appState.selectedPinIndex];
+      if (!pin) return;
+
+      document.getElementById('selectedPinBadge').textContent = `Pin #${pin.index}`;
+      document.getElementById('editPinHeadline').value = pin.headline;
+      document.getElementById('editPinCta').value = pin.cta;
+
+      document.getElementById('seoTitleInput').value = pin.seoTitle;
+      document.getElementById('seoDescInput').value = pin.seoDescription;
+      updateCharCounters();
+    }
+
+    function updateSelectedPinText(field, val) {
+      const pin = appState.generatedPins[appState.selectedPinIndex];
+      if (!pin) return;
+      pin[field] = val;
+      saveState();
+      renderGeneratedPinsGrid();
+    }
+
+    async function downloadSinglePinPNG(index) {
+      if (!checkExportAllowance(1)) return;
+
+      const pin = appState.generatedPins[index];
+      const brand = getActiveBrand();
+      if (!pin) return;
+
+      const exportCanvas = document.getElementById('exportCanvas');
+      await renderPinToCanvas(exportCanvas, pin, brand, appState.variationLevel, brand.aesthetic);
+
+      const link = document.createElement('a');
+      const slug = brand.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      link.download = `${slug}-pin-${pin.index}-1000x1500.png`;
+      link.href = exportCanvas.toDataURL('image/png');
+      link.click();
+
+      appState.exportsUsed += 1;
+      saveState();
+      updateLicenseUI();
+      showToast(`Exported Pin #${pin.index} at 1000×1500px!`, 'success');
+    }
+
+    async function downloadAllBatchPNGs() {
+      const count = appState.generatedPins.length;
+      if (count === 0) return;
+      if (!checkExportAllowance(count)) return;
+
+      const brand = getActiveBrand();
+      const exportCanvas = document.getElementById('exportCanvas');
+      const slug = brand.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+      for (let i = 0; i < count; i++) {
+        const pin = appState.generatedPins[i];
+        await renderPinToCanvas(exportCanvas, pin, brand, appState.variationLevel, brand.aesthetic);
+        const link = document.createElement('a');
+        link.download = `${slug}-pin-${pin.index}-1000x1500.png`;
+        link.href = exportCanvas.toDataURL('image/png');
+        link.click();
+        await new Promise(r => setTimeout(r, 220));
+      }
+
+      appState.exportsUsed += count;
+      saveState();
+      updateLicenseUI();
+      showToast(`Downloaded all ${count} Pinterest PNGs (1000×1500px)!`, 'success');
+    }
+
+    // =========================================================================
+    // 8. SEO COPY INSPECTOR, MINI CALENDAR & PERSISTENT SCHEDULE QUEUE
+    // =========================================================================
+    function syncSelectedPinSeo(field, val) {
+      const pin = appState.generatedPins[appState.selectedPinIndex];
+      if (!pin) return;
+      if (field === 'title') pin.seoTitle = val;
+      if (field === 'description') pin.seoDescription = val;
+      updateCharCounters();
+      saveState();
+    }
+
+    function regenerateSeoForSelected() {
+      const pin = appState.generatedPins[appState.selectedPinIndex];
+      const brand = getActiveBrand();
+      if (!pin) return;
+      const fresh = buildSeoCopyForPin(brand, pin, appState.prompt, Math.floor(Math.random() * 3));
+      pin.seoTitle = fresh.title;
+      pin.seoDescription = fresh.description;
+      syncSelectedPinToInspector();
+      saveState();
+      showToast('Refreshed SEO title & description!', 'info');
+    }
+
+    function updateCharCounters() {
+      document.getElementById('titleCharCount').textContent = document.getElementById('seoTitleInput').value.length;
+      document.getElementById('descCharCount').textContent = document.getElementById('seoDescInput').value.length;
+    }
+
+    function copyFieldText(inputId, label) {
+      const el = document.getElementById(inputId);
+      el.select();
+      el.setSelectionRange(0, 99999);
+      try {
+        document.execCommand('copy');
+        showToast(`${label} copied to clipboard!`, 'success');
+      } catch (err) {
+        showToast(`Could not copy ${label}.`, 'warning');
+      }
+      window.getSelection().removeAllRanges();
+    }
+
+    function renderMiniCalendar() {
+      const grid = document.getElementById('miniCalendarGrid');
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+
+      document.getElementById('calendarMonthLabel').textContent = now.toLocaleDateString('en-US', {
+        month: 'long',
+        year: 'numeric'
+      });
+
+      const firstDayIndex = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      let cellsHtml = '';
+      for (let empty = 0; empty < firstDayIndex; empty++) {
+        cellsHtml += `<div></div>`;
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const cellDate = new Date(year, month, day);
+        const iso = formatISODate(cellDate);
+        const isSelected = iso === appState.selectedDateStr;
+        const hasScheduled = appState.scheduledQueue.some(q => q.date === iso);
+
+        cellsHtml += `
+          <button onclick="selectScheduleDate('${iso}')" class="relative h-7 rounded-lg text-[11px] font-medium transition flex items-center justify-center ${
+            isSelected
+              ? 'bg-tealBrand text-slateDark font-bold shadow'
+              : 'hover:bg-cardDark text-slate-300'
+          }">
+            <span>${day}</span>
+            ${hasScheduled && !isSelected ? '<span class="absolute bottom-0.5 w-1 h-1 rounded-full bg-goldBrand"></span>' : ''}
+          </button>
+        `;
+      }
+
+      grid.innerHTML = cellsHtml;
+    }
+
+    function selectScheduleDate(iso) {
+      appState.selectedDateStr = iso;
+      saveState();
+      renderMiniCalendar();
+    }
+
+    async function scheduleSelectedPin() {
+      const pin = appState.generatedPins[appState.selectedPinIndex];
+      const brand = getActiveBrand();
+      if (!pin) return;
+
+      const postTime = document.getElementById('postTimeSelect').value;
+      const appendUtm = document.getElementById('utmToggle').checked;
+      let finalUrl = (brand.url || '').trim();
+      if (appendUtm && finalUrl) {
+        const sep = finalUrl.includes('?') ? '&' : '?';
+        finalUrl += `${sep}utm_source=pinterest&utm_medium=organic&utm_campaign=pingenie`;
+      }
+
+      // Capture small thumbnail preview from preview canvas
+      const prevCanvas = document.getElementById(`previewCanvas-${appState.selectedPinIndex}`);
+      const thumbDataUrl = prevCanvas ? prevCanvas.toDataURL('image/jpeg', 0.7) : '';
+
+      appState.scheduledQueue.unshift({
+        id: 'sched-' + Date.now(),
+        brandName: brand.name,
+        board: brand.board,
+        title: pin.seoTitle,
+        description: pin.seoDescription,
+        link: finalUrl,
+        date: appState.selectedDateStr,
+        time: postTime,
+        thumb: thumbDataUrl
+      });
+
+      saveState();
+      renderMiniCalendar();
+      renderScheduledQueue();
+      showToast(`Queued "${pin.headline.slice(0, 28)}..." for ${appState.selectedDateStr} at ${postTime}`, 'success');
+    }
+
+    function removeQueueItem(id) {
+      appState.scheduledQueue = appState.scheduledQueue.filter(item => item.id !== id);
+      saveState();
+      renderMiniCalendar();
+      renderScheduledQueue();
+    }
+
+    function renderScheduledQueue() {
+      const list = document.getElementById('scheduledQueueList');
+      document.getElementById('queueCount').textContent = appState.scheduledQueue.length;
+
+      if (appState.scheduledQueue.length === 0) {
+        list.innerHTML = `
+          <div class="text-center py-5 px-3 bg-slateDark/50 border border-dashed border-borderDark rounded-xl text-xs text-slate-400">
+            No pins queued yet. Select a pin &amp; click <strong>Queue Pin</strong> to build your daily schedule.
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = appState.scheduledQueue.map(item => `
+        <div class="bg-cardDark border border-borderDark rounded-xl p-2.5 flex items-center gap-2.5">
+          ${item.thumb ? `<img src="${item.thumb}" alt="Pin thumb" class="w-10 h-14 rounded-lg object-cover shrink-0 border border-borderDark" />` : ''}
+          <div class="flex-1 min-w-0">
+            <p class="text-xs font-semibold text-white truncate">${escapeHtml(item.title)}</p>
+            <p class="text-[11px] text-tealBrand font-medium">${item.date} • ${item.time}</p>
+            <p class="text-[10px] text-slate-400 truncate">Board: ${escapeHtml(item.board)}</p>
+          </div>
+          <button onclick="removeQueueItem('${item.id}')" class="text-slate-400 hover:text-rose-400 p-1.5 transition" title="Remove from queue">
+            <i class="fa-solid fa-trash-can text-xs"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function exportQueueCSV() {
+      if (appState.scheduledQueue.length === 0) {
+        showToast('Queue is empty — add at least one pin before exporting CSV.', 'warning');
+        return;
+      }
+
+      const headers = ['Title', 'Description', 'Destination URL', 'Board', 'Scheduled Date', 'Scheduled Time', 'Brand'];
+      const rows = appState.scheduledQueue.map(q => [
+        csvEscape(q.title),
+        csvEscape(q.description),
+        csvEscape(q.link),
+        csvEscape(q.board),
+        csvEscape(q.date),
+        csvEscape(q.time),
+        csvEscape(q.brandName)
+      ].join(','));
+
+      const csvContent = [headers.join(','), ...rows].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `pingenie-schedule-${formatISODate(new Date())}.csv`;
+      link.click();
+
+      showToast(`Exported ${appState.scheduledQueue.length} scheduled pins to CSV!`, 'success');
+    }
+
+    function exportBrandKit() {
+      const brand = getActiveBrand();
+      const exportPayload = {
+        app: 'PIN Genie — Daily Pin Automation',
+        exportedAt: new Date().toISOString(),
+        brandProfile: {
+          ...brand,
+          customLogoDataUrl: brand.customLogoDataUrl ? '[embedded-logo-image]' : null
+        }
+      };
+      const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `${brand.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-brand-kit.json`;
+      link.click();
+      showToast('Exported Brand DNA Kit (.json)!', 'success');
+    }
+
+    // =========================================================================
+    // 9. COMMERCIAL SAAS LICENSE GATE & WORKSPACE UTILITIES
+    // =========================================================================
+    function checkExportAllowance(requestedCount) {
+      if (appState.proUnlocked) return true;
+      const freeLimit = 3;
+      if (appState.exportsUsed + requestedCount > freeLimit) {
+        openLicenseModal();
+        showToast('Free demo export limit reached — enter Studio Pro key to unlock unlimited PNGs!', 'warning');
+        return false;
+      }
+      return true;
+    }
+
+    function updateLicenseUI() {
+      const badge = document.getElementById('licenseBadgeText');
+      if (appState.proUnlocked) {
+        badge.textContent = 'Studio Pro Unlocked';
+      } else {
+        const remaining = Math.max(0, 3 - appState.exportsUsed);
+        badge.textContent = `Demo Mode (${remaining} Free PNGs Left)`;
+      }
+    }
+
+    function openLicenseModal() {
+      document.getElementById('licenseModal').classList.remove('hidden');
+    }
+
+    function closeLicenseModal() {
+      document.getElementById('licenseModal').classList.add('hidden');
+    }
+
+    function fillDemoLicenseKey() {
+      document.getElementById('licenseKeyInput').value = 'PINGENIE-PRO-2026';
+    }
+
+    function activateLicenseKey() {
+      const key = document.getElementById('licenseKeyInput').value.trim().toUpperCase();
+      if (key === 'PINGENIE-PRO-2026' || key.startsWith('PINGENIE-')) {
+        appState.proUnlocked = true;
+        saveState();
+        updateLicenseUI();
+        closeLicenseModal();
+        showToast('Studio Pro License Activated! Unlimited exports unlocked.', 'success');
+      } else {
+        showToast('Invalid license key. Try PINGENIE-PRO-2026', 'warning');
+      }
+    }
+
+    function requestResetConfirmation() {
+      pendingConfirmAction = () => {
+        localStorage.removeItem(STORAGE_KEY);
+        appState = {
+          activeBrandId: 'brand-pottery',
+          brands: JSON.parse(JSON.stringify(DEFAULT_BRANDS)),
+          prompt: 'Handcrafted speckled ceramic coffee mugs designed for slow, cozy mornings. Highlight gift-ready packaging and small-batch artisan craftsmanship.',
+          variationLevel: 2,
+          batchSize: 4,
+          uploadedPhotos: [],
+          sceneSelection: BUILTIN_SCENES.map(s => ({ id: s.id, selected: s.selected })),
+          generatedPins: [],
+          selectedPinIndex: 0,
+          selectedDateStr: '',
+          scheduledQueue: [],
+          proUnlocked: false,
+          exportsUsed: 0
+        };
+        initDates();
+        renderBrandSelector();
+        syncBrandInputsToUI();
+        renderContentLibrary();
+        renderMiniCalendar();
+        renderScheduledQueue();
+        updateLicenseUI();
+        generateDailyPinBatch(true);
+        showToast('Workspace reset to default studio demo.', 'info');
+      };
+      document.getElementById('confirmBanner').classList.remove('hidden');
+    }
+
+    function confirmActionExecute() {
+      if (typeof pendingConfirmAction === 'function') {
+        pendingConfirmAction();
+      }
+      closeConfirmBanner();
+    }
+
+    function closeConfirmBanner() {
+      pendingConfirmAction = null;
+      document.getElementById('confirmBanner').classList.add('hidden');
+    }
+
+    // =========================================================================
+    // 10. COLOR & STRING HELPERS
+    // =========================================================================
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const colors = {
+        success: 'bg-emerald-950/95 border-emerald-500/60 text-emerald-100',
+        warning: 'bg-amber-950/95 border-amber-500/60 text-amber-100',
+        info: 'bg-panelDark/95 border-tealBrand/60 text-slate-100'
+      };
+      const icons = {
+        success: 'fa-circle-check text-emerald-400',
+        warning: 'fa-triangle-exclamation text-amber-400',
+        info: 'fa-sparkles text-tealBrand'
+      };
+      toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-2.5 rounded-xl border shadow-xl text-xs font-medium transition-all duration-300 ${colors[type] || colors.info}`;
+      toast.innerHTML = `<i class="fa-solid ${icons[type] || icons.info}"></i><span>${escapeHtml(message)}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(8px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3200);
+    }
+
+    function getContrastInk(hex) {
+      const rgb = hexToRgb(hex);
+      const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+      return luminance > 0.58 ? '#0F172A' : '#FFFFFF';
+    }
+
+    function hexToRgb(hex) {
+      const clean = (hex || '#000000').replace('#', '');
+      const num = parseInt(clean.length === 3 ? clean.split('').map(c => c + c).join('') : clean, 16);
+      return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+    }
+
+    function blendHex(hex1, hex2, weight) {
+      const c1 = hexToRgb(hex1);
+      const c2 = hexToRgb(hex2);
+      const r = Math.round(c1.r * (1 - weight) + c2.r * weight);
+      const g = Math.round(c1.g * (1 - weight) + c2.g * weight);
+      const b = Math.round(c1.b * (1 - weight) + c2.b * weight);
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    function lightenOrDarken(hex, amt) {
+      const c = hexToRgb(hex);
+      const r = Math.min(255, Math.max(0, c.r + amt));
+      const g = Math.min(255, Math.max(0, c.g + amt));
+      const b = Math.min(255, Math.max(0, c.b + amt));
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function csvEscape(val) {
+      const s = String(val || '').replace(/"/g, '""');
+      return `"${s}"`;
+    }
+  </script>
+</body>
+</html>
